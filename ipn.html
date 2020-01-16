@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Ідентифікаційний номер</title>
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+	<!-- Optional theme -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+
+	<!-- Latest compiled and minified JavaScript -->
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+
+	<style type="text/css">
+		.result {
+			display: inline-block;
+			text-align: center;
+			padding: 5px;
+			margin: 5px;
+		}
+	</style>
+</head>
+<body style="padding: 10px;">
+	<h1>Ідентифікаційний номер</h1>
+	<div class="row">
+		<div class="col-sm-6">
+			<div class="row">
+				<div class="col-sm-6">
+					<label for="ipn">Ідентифікаційний номер</label>
+				</div>
+				<div class="col-sm-6">
+					<input type="text" id="ipn" name="ipn" value="" minlength="10" maxlength="10" pattern="\d{10}" placeholder="##########" class="form-control">
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-sm-6">
+					<span class="result title">Дата народження</span>
+				</div>
+				<div class="col-sm-6">
+					<span id="birth_date" class="result"></span>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-sm-6">
+					<span class="result title">Стать</span>
+				</div>
+				<div class="col-sm-6">
+					<span id="gender" class="result"></span>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-sm-6">
+					<span class="result title">Контроль</span>
+				</div>
+				<div class="col-sm-6">
+					<span id="control_sum" class="result"></span>
+				</div>
+			</div>
+			<div id="msgbox"></div>
+		</div>
+		<article class="col-sm-6">
+			<p>Перші п'ять цифр кодують дату народження власника номера — зазвичай, це п'ятизначне число є кількістю днів від 31 грудня 1899 року до дати народження особи. Однак, якщо однакову дату народження мають більше 5000 чоловіків (або жінок), то в деяких із них перші п'ять цифр будуть іншими. Наприклад, для дати народження 1 січня 1947 року реєстраційний номер може починатися як із цифри «1», так і з цифри «8».</p>
+			<p>Наступні 4 цифри (включаючи передостанню) — означають порядковий номер людини, що народилася в цей день.</p>
+			<p>Передостання цифра позначає стать власника:</p>
+			<ul>
+				<li>якщо цифра непарна, стать — чоловіча</li>
+				<li>парна — жіноча стать.</li>
+			</ul>
+			<p>Десята цифра — контрольна. Алгоритм для її розрахунку такий (вважатимемо, що код має вигляд АБВГҐДЕЄЖЗ):</p>
+			<p>Розраховуємо контрольну суму</p>
+			<p class="text-center">Х = А*(-1) + Б*5 + В*7 + Г*9 + Ґ*4 + Д*6 + Е*10 + Є*5 + Ж*7</p>
+			<p>залишок від ділення контрольної суми на одинадцять буде контрольним числом.</p>
+			<p>Контрольне число може мати значення від нуля до десяти. У разі залишку 10 старша одиниця відкидається. Контрольною цифрою буде остання цифра контрольного числа (тобто, контрольне число по модулю 10).</p>
+			<p>Джерело: <a href="https://uk.wikipedia.org/wiki/%D0%86%D0%B4%D0%B5%D0%BD%D1%82%D0%B8%D1%84%D1%96%D0%BA%D0%B0%D1%86%D1%96%D0%B9%D0%BD%D0%B8%D0%B9_%D0%BD%D0%BE%D0%BC%D0%B5%D1%80_%D1%84%D1%96%D0%B7%D0%B8%D1%87%D0%BD%D0%BE%D1%97_%D0%BE%D1%81%D0%BE%D0%B1%D0%B8" target="_blank">Вікіпедія — Ідентифікаційний номер фізичної особи</a></p>
+		</article>
+	</div>
+
+<template id="template-message">
+<div class="alert alert-%alert_style%">
+    <a href="#" class="close" data-dismiss="alert" aria-label="Закрити">&times;</a>
+    <strong>%alert_title%!</strong> %alert_text%
+</div>
+</template>
+
+<script>
+// Ідентифікаційний код
+var ipn = ''
+var genders = {
+	0: 'Жіноча',
+	1: 'Чоловіча'
+}
+// Приведення дат до формату РРРР-мм-дд
+Date.prototype.toInputFormat = function() {
+	var yyyy = this.getFullYear().toString()
+	var mm = (this.getMonth() + 1).toString()
+	var dd  = this.getDate().toString()
+	return yyyy + '-' + (mm[1]?mm:'0'+mm[0]) + '-' + (dd[1]?dd:'0'+dd[0])
+}
+// Інформаційне повідомлення
+function msgbox(alert_title, alert_text, alert_style) {
+	var html = $('#template-message').html()
+	html = html.replace('%alert_title%', alert_title).replace('%alert_text%', alert_text).replace('%alert_style%', alert_style)
+	$('#msgbox').append(html)
+}
+// Перевірка ідентифікаційного коду
+function checkipn() {
+	// Автозакриття попередніх інформаційних повідомлень
+	$('.close').click()
+
+	// Перевірка довжини
+	if (ipn.length != 10) {
+		msgbox('Помилка', 'Неправильна довжина', 'warning')
+		$('.result:not(.title)').text('')
+		return false
+	}
+
+	// Перевірка чисел
+	if (!ipn.match(/^\d+$/)) {
+		msgbox('Помилка', 'Код може містити тільки цифри', 'danger')
+		$('.result:not(.title)').text('')
+		return false
+	}
+
+	// День народження
+	var ABCDE = parseInt(ipn.substring(0, 5))
+	if (ipn.substring(0, 1) == 8) ABCDE = parseInt(ABCDE.toString().replace(/8/, 1))
+	var birth_date = new Date('1899-12-31')
+	birth_date.setDate(birth_date.getDate() + ABCDE)
+	birth_date = birth_date.toInputFormat()
+
+	// Стать
+	var gender = parseInt(ipn.substring(8, 1)) % 2
+
+	// Контрольна сума
+	var cyphers = ipn.split('')
+	cyphers.forEach(function(a, i) { cyphers[i] = parseInt(a) })
+	
+	var control_sum = ((-1 * cyphers[0] + 5 * cyphers[1] + 7 * cyphers[2] + 9 * cyphers[3] + 4 * cyphers[4] + 6 * cyphers[5] + 10 * cyphers[6] + 5 * cyphers[7] + 7 * cyphers[8]) % 11) % 10
+
+	control_sum_html = control_sum === cyphers[9] ? '<span class="glyphicon glyphicon-ok text-success"></span>' : '<span class="glyphicon glyphicon-remove text-danger"></span>'
+
+	// Вивід
+	$('#birth_date').text(birth_date)
+	$('#gender').text(genders[gender])
+	$('#control_sum').html(control_sum_html)
+
+}
+
+$(function() {
+	// Виклик перевірки інформаційного коду після його введення користувачем
+	$('#ipn').on('change, keyup', function() {
+		var tmp = $('#ipn').val().trim()
+		if (ipn !== tmp) {
+			ipn = tmp
+			checkipn()
+		}
+	})
+})
+</script>
+
+</body>
+</html>
